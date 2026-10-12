@@ -1,0 +1,38 @@
+# Compiler files
+cache/
+out/
+out/**/*
+
+# Forge build artifacts
+cache_forge/
+out_forge/
+out-*/
+
+# Ignores development broadcast logs
+broadcast/
+
+# Dotenv file
+.env
+
+# Node modules (if any)
+node_modules/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Coverage reports
+coverage/
+coverage.json
+
+# Gas reports
+gas-report.txt
