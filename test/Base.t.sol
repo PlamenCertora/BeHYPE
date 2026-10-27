@@ -4,12 +4,9 @@ pragma solidity ^0.8.20;
 import {Test} from "forge-std/Test.sol";
 import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 import {UUPSProxy} from "../src/lib/UUPSProxy.sol";
-import {BeHYPE} from "../src/BeHYPE.sol";
+import {BeHYPEProtocol} from "../certora/BeHYPEProtocol.sol";
 import {RoleRegistry} from "../src/RoleRegistry.sol";
-import {StakingCore} from "../src/StakingCore.sol";
 import {CoreWriter} from "../src/lib/CoreWriter.sol";
-import {WithdrawManager} from "../src/WithdrawManager.sol";
-import {StakingCore} from "../src/StakingCore.sol";
 import {IStakingCore} from "../src/interfaces/IStakingCore.sol";
 import {IWithdrawManager} from "../src/interfaces/IWithdrawManager.sol";
 import {IRoleRegistry} from "../src/interfaces/IRoleRegistry.sol";
@@ -22,10 +19,13 @@ import "forge-std/console.sol";
 contract BaseTest is Test {
     using Math for uint256;
     
-    BeHYPE public beHYPE;
+    // StakingCore, WithdrawManager and BeHYPE are merged into one contract; the three handles
+    // below all point at the same proxy so the tests read in terms of the original roles.
+    BeHYPEProtocol public protocol;
+    BeHYPEProtocol public beHYPE;
+    BeHYPEProtocol public stakingCore;
+    BeHYPEProtocol public withdrawManager;
     RoleRegistry public roleRegistry;
-    WithdrawManager public withdrawManager;
-    StakingCore public stakingCore;
 
     address public admin = makeAddr("admin");
     address public user = makeAddr("user");
@@ -60,59 +60,42 @@ contract BaseTest is Test {
             abi.encodeWithSelector(RoleRegistry.initialize.selector, admin, address(0), address(0), protocolTreasury)
         )));
 
-        BeHYPE beHYPEImpl = new BeHYPE();
-        beHYPE = BeHYPE(address(new UUPSProxy(
-            address(beHYPEImpl),
-            abi.encodeWithSelector(
-                BeHYPE.initialize.selector,
+        BeHYPEProtocol protocolImpl = new BeHYPEProtocol();
+        protocol = BeHYPEProtocol(payable(address(new UUPSProxy(
+            address(protocolImpl),
+            abi.encodeCall(BeHYPEProtocol.initialize, (
                 "BeHYPE Token",
                 "BeHYPE",
                 address(roleRegistry),
-                address(0)
-            )
-        )));
-
-        StakingCore stakingCoreImpl = new StakingCore();
-        stakingCore = StakingCore(payable(address(new UUPSProxy(
-            address(stakingCoreImpl),
-            abi.encodeWithSelector(
-                StakingCore.initialize.selector,
-                address(roleRegistry),
-                address(beHYPE),
-                address(withdrawManager),
-                400,
-                true
-            )
+                _defaultConfig()
+            ))
         ))));
-
-        WithdrawManager withdrawManagerImpl = new WithdrawManager();
-        withdrawManager = WithdrawManager(payable(address(new UUPSProxy(
-            address(withdrawManagerImpl),
-            abi.encodeWithSelector(WithdrawManager.initialize.selector,
-                0.1 ether,
-                100 ether,
-                100,
-                30,
-                address(roleRegistry), 
-                address(beHYPE),
-                address(stakingCore),
-                10 ether,
-                1 days
-            )
-        ))));
+        beHYPE = protocol;
+        stakingCore = protocol;
+        withdrawManager = protocol;
 
         vm.startPrank(admin);
-        beHYPE.setStakingCore(address(stakingCore));
-        beHYPE.setWithdrawManager(address(withdrawManager));
-        stakingCore.setWithdrawManager(address(withdrawManager));
         roleRegistry.grantRole(roleRegistry.PROTOCOL_ADMIN(), admin);
         roleRegistry.grantRole(roleRegistry.PROTOCOL_GUARDIAN(), admin);
-        roleRegistry.setWithdrawManager(address(withdrawManager));
-        roleRegistry.setStakingCore(address(stakingCore));
+        roleRegistry.setWithdrawManager(address(protocol));
+        roleRegistry.setStakingCore(address(protocol));
         vm.stopPrank();
 
         vm.deal(user, 10 ether);
         vm.deal(user2, 10 ether);
+    }
+
+    function _defaultConfig() internal pure returns (BeHYPEProtocol.InitConfig memory) {
+        return BeHYPEProtocol.InitConfig({
+            acceptablAprInBps: 400,
+            exchangeRateGuard: true,
+            minStakeAmount: 0.1 ether,
+            maxStakeAmount: 100 ether,
+            lowWatermarkInBpsOfTvl: 100,
+            instantWithdrawalFeeInBps: 30,
+            bucketCapacity: 10 ether,
+            bucketRefillRate: 1 days
+        });
     }
 
     function _mintTokens(address to, uint256 amount) internal {

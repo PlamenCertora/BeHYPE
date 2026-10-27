@@ -46,8 +46,8 @@ contract RoleRegistryTest is BaseTest {
         vm.prank(pauser);
         roleRegistry.pauseProtocol();
         
-        assertTrue(stakingCore.paused());
-        assertTrue(withdrawManager.paused());
+        assertTrue(stakingCore.stakingPaused());
+        assertTrue(withdrawManager.withdrawalsPaused());
         
         vm.expectRevert(IStakingCore.StakingPaused.selector);
         stakingCore.stake("test");
@@ -66,14 +66,14 @@ contract RoleRegistryTest is BaseTest {
         vm.prank(pauser);
         roleRegistry.pauseProtocol();
         
-        assertTrue(stakingCore.paused());
-        assertTrue(withdrawManager.paused());
+        assertTrue(stakingCore.stakingPaused());
+        assertTrue(withdrawManager.withdrawalsPaused());
         
         vm.prank(guardian);
         roleRegistry.unpauseProtocol();
         
-        assertFalse(stakingCore.paused());
-        assertFalse(withdrawManager.paused());
+        assertFalse(stakingCore.stakingPaused());
+        assertFalse(withdrawManager.withdrawalsPaused());
         
         vm.deal(user, 1 ether);
         vm.startPrank(user);
@@ -100,8 +100,8 @@ contract RoleRegistryTest is BaseTest {
         vm.prank(pauser);
         roleRegistry.pauseProtocol();
         
-        assertTrue(stakingCore.paused());
-        assertTrue(withdrawManager.paused());
+        assertTrue(stakingCore.stakingPaused());
+        assertTrue(withdrawManager.withdrawalsPaused());
         
         vm.expectRevert(IStakingCore.StakingPaused.selector);
         vm.prank(user);
@@ -116,8 +116,8 @@ contract RoleRegistryTest is BaseTest {
         vm.prank(guardian);
         roleRegistry.unpauseProtocol();
         
-        assertFalse(stakingCore.paused());
-        assertFalse(withdrawManager.paused());
+        assertFalse(stakingCore.stakingPaused());
+        assertFalse(withdrawManager.withdrawalsPaused());
         
         vm.startPrank(user);
         stakingCore.stake{value: 1 ether}("test");

@@ -6,11 +6,15 @@ external contracts. That loses the exchange-ratio denominator (`totalSupply`), t
 liquidity (`address(stakingCore).balance`) and the `hypeRequestedForWithdraw` bound. This folder
 merges the three into one contract so those properties can be stated and proved.
 
+The original `src/StakingCore.sol`, `src/WithdrawManager.sol`, `src/BeHYPE.sol` and
+`src/lib/BucketLimiter.sol` have been removed; `BeHYPEProtocol` is now the protocol's only
+implementation. The originals remain in git history at commit `8041e71`.
+
 | File | Purpose |
 |---|---|
 | `BeHYPEProtocol.flat.sol` | **Upload this to the Autoprover.** Self-contained (no imports); exactly one concrete contract, `BeHYPEProtocol`. Compiles with solc 0.8.26 – 0.8.36, with and without via-IR. |
 | `BeHYPEProtocol.sol` | Readable source of the merge (imports OZ from `lib/`). The flat file is generated from it. |
-| `../test/equivalence/` | Differential tests that prove the merged contract behaves the same as the original 3-contract system. |
+| `../test/*.t.sol` | The project's unit tests, ported to run against the merged contract. |
 
 Regenerate the flat file after editing the source:
 
@@ -25,7 +29,7 @@ forge flatten certora/BeHYPEProtocol.sol -o certora/BeHYPEProtocol.flat.sol
 | `StakingCore` | merged | Custodies HYPE; owns the exchange ratio |
 | `WithdrawManager` | merged | Owns the liabilities (queue, `hypeRequestedForWithdraw`), escrows beHYPE |
 | `BeHYPE` (ERC20Permit) | merged | `totalSupply` is the ratio denominator; escrow balance |
-| `lib/BucketLimiter` | inlined | The original `canConsume`/`consumable` are `external` (a separately linked library). They are now `internal`; the code is otherwise verbatim. |
+| `BucketLimiter` (was `src/lib/BucketLimiter.sol`) | inlined | The original `canConsume`/`consumable` are `external` (a separately linked library). They are now `internal`; the code is otherwise verbatim. |
 | `RoleRegistry` | **external** (`IRoleRegistry` subset) | Pure access control on Solady `EnumerableRoles`. Verify it as its own Autoprover job. |
 | `L1Read` (HyperCore precompiles 0x801/0x805) | **external** (`IL1Read`) | HyperCore state changes between EVM txs, so havoc is the sound model |
 | `CoreWriter` (0x3333…) | **external** (`ICoreWriter`) | System contract; fire-and-forget |
@@ -86,49 +90,35 @@ These are the only behaviours that differ, and they cannot be avoided in a singl
 
 ## Equivalence evidence
 
-`test/equivalence/` deploys both systems side by side. The original system runs behind proxies
-with an unmodified RoleRegistry, the merged one behind a proxy with its own RoleRegistry. Every
-action is executed on both, and the harness compares:
+Equivalence with the original 3-contract system was established before the originals were
+removed. Commit `8041e71` contains both systems and the differential suite
+(`test/equivalence/`). It deploys them side by side, executes every action on both, and compares:
 
 - success or revert, and the exact revert and return data (original SC/WM/token addresses
   normalised to the merged address);
 - every emitted log (emitter, topics, data);
 - ETH deltas of every tracked account and of protocol custody;
-- the full observable state after each call: every StakingCore, WithdrawManager and token getter,
-  every queue entry, per-user balances, allowances, nonces and unfinalized withdrawals, the rate
-  limiter, and the pause flags.
+- the full observable state after each call.
 
-What the tests cover:
-
-- `MergedEquivalence.t.sol` contains 13 scenario and fuzz tests:
-  - the stake / queue / finalize lifecycle;
-  - instant withdrawals (fee, rate limit, low watermark);
-  - exchange-ratio guard paths and HyperCore actions;
-  - pausing, including independent pause flags;
-  - every unauthorized call path and the UUPS upgrade and re-initialization guards;
-  - pointer re-pointing to an EOA;
-  - ERC20, permit and escrow donations;
-  - re-entrancy from a payout callback during `finalizeWithdrawals`, including the protocol state
-    the callback observes mid-loop.
-- `MergedEquivalenceInvariant.t.sol` is a stateful differential fuzzer over 15 action types,
-  including admin/guardian setters, L1 state changes, time warps, pointer re-pointing and outsider
-  attempts. It fails on any divergence. The committed config is 64 runs × 50 depth. A one-off deep
-  campaign of 512 runs × 100 depth (51,200 calls) found 0 divergences.
-
-The harness was mutation-tested. Each of these planted bugs in the merged contract is caught:
-- a dropped pointer check;
-- a capacity rounding flip;
-- `lastFinalizedIndex` written before the payout loop;
-- fee rounding up;
-- a missing `nonReentrant`;
-- reordered transfer/burn events;
-- a shared pause flag.
-
-The flat file's runtime bytecode is byte-identical (metadata stripped) to the tested source build.
+That suite had 13 scenario and fuzz tests plus a stateful differential fuzzer over 15 action
+types. A deep campaign of 512 runs × 100 depth (51,200 calls) found 0 divergences. The suite was
+mutation-tested, and all seven planted bugs were caught. To reproduce:
 
 ```sh
-forge test --match-path "test/equivalence/*"
+git checkout 8041e71 && forge test --match-path "test/equivalence/*"
 ```
+
+After the removal, the project's original 43 unit tests run against the merged contract with
+their assertions unchanged (exact fees, balances, exchange ratios and revert selectors). In
+`test/Base.t.sol`, the `beHYPE`, `stakingCore` and `withdrawManager` handles all point at the one
+`BeHYPEProtocol` proxy. Only upgrade/re-initialization calls and `paused()` →
+`stakingPaused()`/`withdrawalsPaused()` were adapted.
+
+```sh
+forge test
+```
+
+The flat file's runtime bytecode is byte-identical (metadata stripped) to the tested source build.
 
 ## Notes for writing specs
 

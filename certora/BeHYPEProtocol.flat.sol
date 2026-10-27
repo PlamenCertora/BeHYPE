@@ -5329,7 +5329,7 @@ interface IExternalWithdrawManager {
 
 /* ========== INLINED LIBRARY ========== */
 
-/// @notice src/lib/BucketLimiter.sol, verbatim except canConsume/consumable are `internal`
+/// @notice Formerly src/lib/BucketLimiter.sol, verbatim except canConsume/consumable are `internal`
 /// instead of `external` (the original compiles to a separately linked library; both are
 /// pure-view on a memory copy, so behaviour is identical).
 library BucketLimiter {

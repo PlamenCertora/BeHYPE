@@ -167,7 +167,7 @@ contract BeHYPETest is BaseTest {
         _mintTokens(user, amount);
         assertEq(beHYPE.balanceOf(user), amount);
         assertEq(beHYPE.totalSupply(), amount);
-        BeHYPE newBeHYPEImpl = new BeHYPE();
+        BeHYPEProtocol newBeHYPEImpl = new BeHYPEProtocol();
         console.log("New BeHYPE implementation deployed at:", address(newBeHYPEImpl));
 
         address oldImplementation = _getProxyImplementation(address(beHYPE));
@@ -187,7 +187,7 @@ contract BeHYPETest is BaseTest {
     }
 
     function test_RevertUpgradeUnauthorized() public {
-        BeHYPE newBeHYPEImpl = new BeHYPE();
+        BeHYPEProtocol newBeHYPEImpl = new BeHYPEProtocol();
 
         vm.prank(user);
         vm.expectRevert(abi.encodeWithSelector(IRoleRegistry.OnlyProtocolUpgrader.selector));
@@ -197,13 +197,7 @@ contract BeHYPETest is BaseTest {
     function test_RevertReinitialization() public {
         vm.prank(admin);
         vm.expectRevert(Initializable.InvalidInitialization.selector);
-        beHYPE.initialize(
-            "BeHYPE Token",
-            "BeHYPE",
-            address(roleRegistry),
-            address(stakingCore),
-            address(withdrawManager)
-        );
+        protocol.initialize("BeHYPE Token", "BeHYPE", address(roleRegistry), _defaultConfig());
     }
 
 }

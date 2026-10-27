@@ -90,7 +90,7 @@ contract StakingCoreTest is BaseTest {
     }
 
     function test_RevertUpgradeUnauthorized() public {
-        StakingCore newStakingCoreImpl = new StakingCore();
+        BeHYPEProtocol newStakingCoreImpl = new BeHYPEProtocol();
 
         vm.prank(user);
         vm.expectRevert(abi.encodeWithSelector(IRoleRegistry.OnlyProtocolUpgrader.selector));
@@ -98,7 +98,7 @@ contract StakingCoreTest is BaseTest {
     }
 
     function test_UpgradeSuccess() public {
-        StakingCore newStakingCoreImpl = new StakingCore();
+        BeHYPEProtocol newStakingCoreImpl = new BeHYPEProtocol();
 
         vm.prank(admin);
         stakingCore.upgradeToAndCall(address(newStakingCoreImpl), "");
@@ -109,13 +109,7 @@ contract StakingCoreTest is BaseTest {
     function test_RevertReinitialization() public {
         vm.prank(admin);
         vm.expectRevert(Initializable.InvalidInitialization.selector);
-        stakingCore.initialize(
-            address(roleRegistry),
-            address(beHYPE),
-            address(withdrawManager),
-            400,
-            true
-        );
+        protocol.initialize("BeHYPE Token", "BeHYPE", address(roleRegistry), _defaultConfig());
     }
 
 }

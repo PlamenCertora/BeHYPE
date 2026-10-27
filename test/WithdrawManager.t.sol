@@ -340,7 +340,7 @@ contract WithdrawManagerTest is BaseTest {
         assertEq(unFinalizedWithdrawals.length, 0);
     }
     function test_RevertUpgradeUnauthorized() public {
-        WithdrawManager newWithdrawManagerImpl = new WithdrawManager();
+        BeHYPEProtocol newWithdrawManagerImpl = new BeHYPEProtocol();
 
         vm.prank(user);
         vm.expectRevert(abi.encodeWithSelector(IRoleRegistry.OnlyProtocolUpgrader.selector));
@@ -348,7 +348,7 @@ contract WithdrawManagerTest is BaseTest {
     }
 
     function test_UpgradeSuccess() public {
-        WithdrawManager newWithdrawManagerImpl = new WithdrawManager();
+        BeHYPEProtocol newWithdrawManagerImpl = new BeHYPEProtocol();
 
         vm.prank(admin);
         withdrawManager.upgradeToAndCall(address(newWithdrawManagerImpl), "");
@@ -359,17 +359,7 @@ contract WithdrawManagerTest is BaseTest {
     function test_RevertReinitialization() public {
         vm.prank(admin);
         vm.expectRevert(Initializable.InvalidInitialization.selector);
-        withdrawManager.initialize(
-            0.1 ether,
-            100 ether,
-            100,
-            30,
-            address(roleRegistry), 
-            address(beHYPE),
-            address(stakingCore),
-            10 ether,
-            1 days
-        );
+        protocol.initialize("BeHYPE Token", "BeHYPE", address(roleRegistry), _defaultConfig());
     }
 
 }

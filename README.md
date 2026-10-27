@@ -2,6 +2,11 @@
 
 ## Core Components
 
+StakingCore, WithdrawManager and the beHYPE token are implemented as a single contract,
+`BeHYPEProtocol` (`certora/BeHYPEProtocol.sol`). The sections below describe its three roles.
+See `certora/README.md` for the merge details and the function mapping from the former
+separate contracts.
+
 ### beHYPE Token
 
 The beHYPE token is an ERC-20 token representing staked HYPE:
@@ -48,8 +53,6 @@ Timelock with 3 day delay controlling all upgrade roles for the protocol
 
 | Contract | Testnet Address | Mainnet Address |
 |----------|-----------------|-----------------|
-| beHYPE | TBD | TBD |
-| WithdrawManager | TBD | TBD |
-| StakingCore | TBD | TBD |
+| BeHYPEProtocol (beHYPE / WithdrawManager / StakingCore) | TBD | TBD |
 | RoleRegistry | TBD | TBD |
 | BeHYPETimelock | TBD | TBD |
