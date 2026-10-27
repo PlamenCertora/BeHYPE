@@ -3,7 +3,7 @@
 ## Core Components
 
 StakingCore, WithdrawManager and the beHYPE token are implemented as a single contract,
-`BeHYPEProtocol` (`certora/BeHYPEProtocol.sol`). The sections below describe its three roles.
+`BeHYPEProtocol` (`src/BeHYPEProtocol.sol`). The sections below describe its three roles.
 See `certora/README.md` for the merge details and the function mapping from the former
 separate contracts.
 

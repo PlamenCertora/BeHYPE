@@ -2512,6 +2512,34 @@ abstract contract ContextUpgradeable is Initializable {
     }
 }
 
+// src/interfaces/IBeHYPE.sol
+
+/**
+ * @title IBeHYPEToken
+ * @notice Interface for the BeHYPE token contract
+ */
+interface IBeHYPEToken is IERC20 {
+
+    error Unauthorized();
+
+    event StakingCoreUpdated(address stakingCore);
+    event WithdrawManagerUpdated(address withdrawManager);
+    
+    /**
+     * @notice Mints new tokens to the specified address
+     * @param to Address to receive the minted tokens
+     * @param amount Amount of tokens to mint
+     */
+    function mint(address to, uint256 amount) external;
+
+    /**
+     * @notice Burns tokens from the specified address
+     * @param from Address to burn tokens fro
+     * @param amount Amount of tokens to burn
+     */
+    function burn(address from, uint256 amount) external;
+}
+
 // lib/openzeppelin-contracts/contracts/token/ERC20/extensions/IERC20Metadata.sol
 
 // OpenZeppelin Contracts (last updated v5.4.0) (token/ERC20/extensions/IERC20Metadata.sol)
@@ -3740,6 +3768,515 @@ library Bytes {
             value := mload(add(add(buffer, 0x20), offset))
         }
     }
+}
+
+// src/interfaces/IRoleRegistry.sol
+
+/**
+ * @title IRoleRegistry
+ * @notice Interface for the RoleRegistry contract
+ * @dev Defines the external interface for RoleRegistry with role management functions
+ * @author ether.fi
+ */
+interface IRoleRegistry {
+    /**
+     * @dev Error thrown when a function is called by an account without the protocol upgrader role
+     */
+    error OnlyProtocolUpgrader();
+
+    /**
+     * @dev Error thrown when a function is called by an unauthorized account
+     */
+    error NotAuthorized();
+
+    /* ========== EVENTS ========== */
+
+    /**
+     * @notice Emitted when the protocol treasury is updated
+     * @param _protocolTreasury The new protocol treasury address
+     */
+    event ProtocolTreasuryUpdated(address _protocolTreasury);
+
+    /**
+     * @notice Emitted when the withdraw manager is updated
+     * @param _withdrawManager The new withdraw manager address
+     */
+    event WithdrawManagerUpdated(address _withdrawManager);
+
+    /**
+     * @notice Emitted when the staking core is updated
+     * @param _stakingCore The new staking core address
+     */
+    event StakingCoreUpdated(address _stakingCore);
+
+    /**
+     * @notice Emitted when the protocol is paused
+     */
+    event ProtocolPaused();
+
+    /**
+     * @notice Emitted when the protocol is unpaused
+     */
+    event ProtocolUnpaused();
+
+    /**
+     * @notice Returns the maximum allowed role value
+     * @dev This is used by EnumerableRoles._validateRole to ensure roles are within valid range
+     * @return The maximum role value
+     */
+    function MAX_ROLE() external pure returns (uint256);
+
+    /**
+     * @notice Initializes the contract with the specified parameters
+     * @param _owner The address that will be set as the initial owner
+     * @param _withdrawManager The address of the withdraw manager contract
+     * @param _stakingCore The address of the staking core contract
+     * @param _protocolTreasury The address of the protocol treasury
+     */
+    function initialize(address _owner, address _withdrawManager, address _stakingCore, address _protocolTreasury) external;
+
+    /**
+     * @notice Checks if an account has any of the specified roles
+     * @dev Reverts if the account doesn't have at least one of the roles
+     * @param account The address to check roles for
+     * @param encodedRoles ABI encoded roles (abi.encode(ROLE_1, ROLE_2, ...))
+     */
+    function checkRoles(address account, bytes memory encodedRoles) external view;
+
+    /**
+     * @notice Checks if an account has a specific role
+     * @param role The role to check (as bytes32)
+     * @param account The address to check the role for
+     * @return bool True if the account has the role, false otherwise
+     */
+    function hasRole(bytes32 role, address account) external view returns (bool);
+
+    /**
+     * @notice Grants a role to an account
+     * @dev Only callable by the contract owner
+     * @param role The role to grant (as bytes32)
+     * @param account The address to grant the role to
+     */
+    function grantRole(bytes32 role, address account) external;
+
+    /**
+     * @notice Revokes a role from an account
+     * @dev Only callable by the contract owner
+     * @param role The role to revoke (as bytes32)
+     * @param account The address to revoke the role from
+     */
+    function revokeRole(bytes32 role, address account) external;
+
+    /**
+     * @notice Gets all addresses that have a specific role
+     * @dev Wrapper around EnumerableRoles roleHolders function
+     * @param role The role to query (as bytes32)
+     * @return Array of addresses that have the specified role
+     */
+    function roleHolders(bytes32 role) external view returns (address[] memory);
+
+    /**
+     * @notice Checks if an account is the protocol upgrader
+     * @dev Reverts if the account is not the protocol upgrader
+     * @param account The address to check
+     */
+    function onlyProtocolUpgrader(address account) external view;
+
+    /**
+     * @notice Returns the PROTOCOL_PAUSER role identifier
+     * @return The bytes32 identifier for the PROTOCOL_PAUSER role
+     */
+    function PROTOCOL_PAUSER() external view returns (bytes32);
+
+    /**
+     * @notice Returns the PROTOCOL_ADMIN role identifier
+     * @dev performs protocol admin actions
+     * @return The bytes32 identifier for the PROTOCOL_ADMIN role
+     */
+    function PROTOCOL_ADMIN() external view returns (bytes32);
+
+    /**
+     * @notice Returns the PROTOCOL_GUARDIAN role identifier
+     * @dev performs protocol guardian actions
+     * @return The bytes32 identifier for the PROTOCOL_GUARDIAN role
+     */
+    function PROTOCOL_GUARDIAN() external view returns (bytes32);
+
+    /**
+     * @notice Returns the withdraw manager contract address
+     * @return The address of the withdraw manager contract
+     */
+    function withdrawManager() external view returns (IWithdrawManager);
+
+    /**
+     * @notice Returns the staking core contract address
+     * @return The address of the staking core contract
+     */
+    function stakingCore() external view returns (IStakingCore);
+
+    /**
+     * @notice Returns the protocol treasury address
+     * @return The address of the protocol treasury
+     */
+    function protocolTreasury() external view returns (address);
+
+    /* ========== ADMIN FUNCTIONS ========== */
+
+    /**
+     * @notice Sets the protocol treasury address
+     * @dev Only callable by accounts with PROTOCOL_GUARDIAN role
+     * @param _protocolTreasury The new protocol treasury address
+     */
+    function setProtocolTreasury(address _protocolTreasury) external;
+
+    /**
+     * @notice Sets the withdraw manager contract address
+     * @dev Only callable by accounts with PROTOCOL_GUARDIAN role
+     * @param _withdrawManager The new withdraw manager contract address
+     */
+    function setWithdrawManager(address _withdrawManager) external;
+
+    /**
+     * @notice Sets the staking core contract address
+     * @dev Only callable by accounts with PROTOCOL_GUARDIAN role
+     * @param _stakingCore The new staking core contract address
+     */
+    function setStakingCore(address _stakingCore) external;
+
+    /**
+     * @notice Pauses the protocol by pausing withdrawals and staking
+     * @dev Only callable by accounts with PROTOCOL_PAUSER role
+     */
+    function pauseProtocol() external;
+
+    /**
+     * @notice Unpauses the protocol by unpausing withdrawals and staking
+     * @dev Only callable by accounts with PROTOCOL_GUARDIAN role
+     */
+    function unpauseProtocol() external;
+}
+
+// src/interfaces/IStakingCore.sol
+
+/**
+ * @title IStakingCore
+ * @notice Interface for the StakingCore contract that manages staking operations and exchange ratios
+ * @dev Provides functionality for staking deposits, withdrawals, token delegation, and exchange ratio management
+ * @author EtherFi
+ */
+interface IStakingCore {
+
+    /* ========== ERRORS ========== */
+
+    error NotAuthorized();
+    error ExchangeRatioChangeExceedsThreshold(uint16 yearlyRateInBps);
+    error FailedToFetchDelegatorSummary();
+    error AmountExceedsUint64Max();
+    error FailedToDepositToHyperCore();
+    error StakingPaused();
+    error ElapsedTimeCannotBeZero();
+    error FailedToSendFromWithdrawManager();
+
+    /* ========== EVENTS ========== */
+
+    /**
+     * @notice Emitted when the exchange ratio is updated
+     * @param oldRatio The previous exchange ratio
+     * @param newRatio The new exchange ratio
+     * @param yearlyRateInBps The absolute yearly rate in bps
+     */
+    event ExchangeRatioUpdated(uint256 oldRatio, uint256 newRatio, uint16 yearlyRateInBps);
+
+    /**
+     * @notice Emitted when HYPE is deposited to HyperCore staking module from HyperCore spot account
+     * @param amount The amount of HYPE deposited
+     */
+    event HyperCoreDeposit(uint256 amount);
+
+    /**
+     * @notice Emitted when HYPE is withdrawn from HyperCore staking module to HyperCore spot account
+     * @param amount The amount of HYPE withdrawn
+     */
+    event HyperCoreWithdraw(uint256 amount);
+
+    /**
+     * @notice Emitted when HYPE is deposited to HyperCore staking module from HyperCore spot account
+     * @param amount The amount of HYPE deposited
+     */
+    event HyperCoreStakingDeposit(uint256 amount);
+
+    /**
+     * @notice Emitted when HYPE is withdrawn from HyperCore staking module
+     * @param amount The amount of HYPE withdrawn
+     */
+    event HyperCoreStakingWithdraw(uint256 amount);
+
+    /**
+     * @notice Emitted when HYPE is staked
+     * @param user Who minted the tokens
+     * @param amount The amount of HYPE staked
+     * @param communityCode The community code of the staked tokens
+     */
+    event Deposit(address user, uint256 amount, string communityCode);
+
+    /**
+     * @notice Emitted when HYPE is delegated or undelegated
+     * @param validator The validator address
+     * @param amount The amount of HYPE delegated/undelegated
+     * @param isUndelegate True if undelegating, false if delegating 22
+     */
+    event TokenDelegated(address validator, uint256 amount, bool isUndelegate);
+
+    /**
+     * @notice Emitted when the withdraw manager is updated
+     * @param withdrawManager The new withdraw manager
+     */
+    event WithdrawManagerUpdated(address withdrawManager);
+
+    /* ========== MAIN FUNCTIONS ========== */
+
+    /**
+     * @notice Stakes HYPE
+     * @param communityCode The community code of the staked tokens
+     */
+    function stake(string memory communityCode) external payable;
+
+    /* ========== ADMIN FUNCTIONS ========== */
+
+    /**
+     * @notice Updates the exchange ratio based on L1 delegator summary
+     * @dev Only callable by accounts with PROTOCOL_GOVERNOR role
+     * @dev Prevents negative rebases and enforces maximum APR change threshold
+     * @dev Emits ExchangeRatioUpdated event on successful update
+     */
+    function updateExchangeRatio() external;
+
+    /**
+     * @notice Allows the withdraw manager to send HYPE to the user
+     * @param amount The amount of HYPE to send
+     * @param to The address to send the HYPE to
+     * @dev Only callable by the withdraw manager
+     */
+    function sendFromWithdrawManager(uint256 amount, address to) external;
+
+    /**
+     * @notice Sets the withdraw manager
+     * @param _withdrawManager The new withdraw manager
+     * @dev Only callable by the protocol upgrader
+     */
+    function setWithdrawManager(address _withdrawManager) external;
+
+    /**
+     * @notice Updates the acceptable APR
+     * @param _acceptablAprInBps The new acceptable APR
+     * @dev Only callable by the protocol guardian
+     */
+    function updateAcceptableApr(uint16 _acceptablAprInBps) external;
+
+    /**
+     * @notice Updates the exchange rate guard
+     * @param _exchangeRateGuard The new exchange rate guard
+     * @dev Only callable by the protocol guardian
+     */
+    function updateExchangeRateGuard(bool _exchangeRateGuard) external;
+
+    /**
+     * @notice Deposits HYPE to HyperCore staking module from HyperCore spot account
+     * @param amount The amount of HYPE to deposit in wei
+     * @dev Only callable by the protocol admin
+     */
+    function depositToHyperCore(uint256 amount) external;
+
+    /**
+     * @notice Withdraws HYPE from HyperCore
+     * @param amount The amount of HYPE to withdraw in wei
+     * @dev Only callable by accounts with PROTOCOL_GOVERNOR role
+     * @dev Sends Action 5 to CoreWriter for HyperCore processing
+     * @dev Emits StakingWithdraw event
+     * @dev Reverts if the amount is greater than the pending hype withdrawal amount
+     */
+    function withdrawFromHyperCore(uint256 amount) external;
+
+    /**
+     * @notice Deposits HYPE to staking via CoreWriter Action 4
+     * @param amount The amount of HYPE to deposit in wei
+     * @dev Only callable by accounts with PROTOCOL_ADMIN role
+     * @dev Sends Action 4 to CoreWriter for HyperCore processing
+     * @dev Emits StakingDeposit event
+     */
+    function depositToStaking(uint256 amount) external;
+
+    /**
+     * @notice Withdraws HYPE from staking via CoreWriter Action 5
+     * @param amount The amount of HYPE to withdraw in wei
+     * @dev Only callable by accounts with PROTOCOL_ADMIN role
+     * @dev Sends Action 5 to CoreWriter for HyperCore processing
+     * @dev Emits StakingWithdraw event
+     * @dev Reverts if the amount is greater than the pending hype withdrawal amount
+     */
+    function withdrawFromStaking(uint256 amount) external;
+
+    /**
+     * @notice Delegates or undelegates tokens via CoreWriter Action 3
+     * @param validator The validator address to delegate/undelegate from
+     * @param amount The amount of tokens to delegate/undelegate in wei
+     * @param isUndelegate True if undelegating, false if delegating
+     * @dev Only callable by accounts with PROTOCOL_ADMIN role
+     * @dev Sends Action 3 to CoreWriter for HyperCore processing
+     * @dev Emits TokenDelegated event
+     */
+    function delegateTokens(address validator, uint256 amount, bool isUndelegate) external;
+
+    /**
+     * @notice Pauses staking
+     * @dev Only callable by the role registry
+     */
+    function pauseStaking() external;
+    
+    /**
+     * @notice Unpauses staking
+     * @dev Only callable by the role registry
+     */
+    function unpauseStaking() external;
+
+    /* ========== VIEW FUNCTIONS ========== */
+
+    /**
+     * @notice Converts kHYPE amount to HYPE using current exchange ratio
+     * @param kHYPEAmount The amount of kHYPE tokens to convert
+     * @return The equivalent amount of HYPE tokens
+     * @dev Uses current exchange ratio for conversion
+     */
+    function BeHYPEToHYPE(uint256 kHYPEAmount) external view returns (uint256);
+
+    /**
+     * @notice Converts HYPE amount to kHYPE using current exchange ratio
+     * @param HYPEAmount The amount of HYPE tokens to convert
+     * @return The equivalent amount of kHYPE tokens
+     * @dev Uses current exchange ratio for conversion
+     */
+    function HYPEToBeHYPE(uint256 HYPEAmount) external view returns (uint256);
+
+    /**
+     * @notice Returns the total amount of HYPE in the protocol
+     * @return The total amount of HYPE in the protocol
+     */
+    function getTotalProtocolHype() external view returns (uint256);
+}
+
+// src/interfaces/IWithdrawManager.sol
+
+/**
+ * @title IWithdrawManager
+ * @notice Interface for the WithdrawalQueue contract
+ * @dev Defines all public and external functions for withdrawal management
+ */
+interface IWithdrawManager {
+
+    /* ========== STRUCTS ========== */
+    
+    struct WithdrawalEntry {
+        address user;              // Address of the user
+        uint256 beHypeAmount;      // Amount of beHYPE tokens locked for withdrawal
+        uint256 hypeAmount;        // Amount of HYPE to be withdrawn
+        bool finalized;            // Whether the withdrawal has been finalized
+    }
+
+    /* ========== ERRORS ========== */
+
+    error WithdrawalsPaused();
+    error InvalidAmount();
+    error InsufficientBeHYPEBalance();
+    error NotAuthorized();
+    error IndexOutOfBounds();
+    error CanOnlyFinalizeForward();
+    error WithdrawalNotFinalized();
+    error InvalidWithdrawalID();
+    error TransferFailed();
+    error WithdrawalsNotPaused();
+    error InsufficientHYPELiquidity();
+    error InstantWithdrawalRateLimitExceeded();
+    error InvalidInstantWithdrawalFee();
+
+    /* ========== EVENTS ========== */
+    
+    event WithdrawalQueued(
+        address indexed user,
+        uint256 indexed withdrawalId,
+        uint256 beHypeAmount,
+        uint256 hypeAmount,
+        uint256 queueIndex
+    );
+    
+    event WithdrawalsBatchFinalized(uint256 upToIndex);
+    
+    event InstantWithdrawal(
+        address indexed user,
+        uint256 beHypeAmountWithdrawn,
+        uint256 hypeAmountReceived,
+        uint256 beHypeInstantWithdrawalFee
+    );
+    
+    event InstantWithdrawalFeeInBpsUpdated(uint256 instantWithdrawalFeeInBps);
+    
+    /* ========== MAIN FUNCTIONS ========== */
+    
+    /**
+     * @notice Queue a withdrawal request
+     * @param beHypeAmount Amount of beHYPE tokens to withdraw
+     * @param instant Whether to withdraw instantly for a fee or queue
+     * @return withdrawalId The ID of the withdrawal request
+     */
+    function withdraw(uint256 beHypeAmount, bool instant) external returns (uint256 withdrawalId);
+    
+    /**
+     * @notice Finalize withdrawals up to a specific index (protocol governor only)
+     * @param index Index up to which withdrawals should be finalized
+     */
+    function finalizeWithdrawals(uint256 index) external;
+    
+    /* ========== VIEW FUNCTIONS ========== */
+    
+    /**
+     * @notice Get the count of pending (unfinalized) withdrawals
+     * @return uint256 Number of pending withdrawals
+     */
+    function getPendingWithdrawalsCount() external view returns (uint256);
+    
+    /**
+     * @notice Check if a withdrawal amount can be instant withdrawn
+     * @param beHypeAmount Amount of beHYPE tokens to withdraw
+     * @return bool True if the withdrawal can be instant withdrawn
+     */
+    function canInstantWithdraw(uint256 beHypeAmount) external view returns (bool);
+    
+    /**
+     * @notice Get a withdrawal entry from the queue
+     * @param index Index of the withdrawal entry
+     * @return WithdrawalEntry The withdrawal entry
+     */
+    function getWithdrawalQueue(uint256 index) external view returns (WithdrawalEntry memory);
+
+    /**
+     * @notice Get the amount of hype requested for withdrawal
+     * @return uint256 The amount of hype requested for withdrawal
+     */
+    function hypeRequestedForWithdraw() external view returns (uint256);
+    
+    /* ========== ADMIN FUNCTIONS ========== */
+    
+    /**
+     * @notice Pause withdrawals
+     * @dev Only callable by the role registry
+     */
+    function pauseWithdrawals() external;
+    
+    /**
+     * @notice Unpause withdrawals
+     * @dev Only callable by the role registry
+     */
+    function unpauseWithdrawals() external;
+    
 }
 
 // lib/openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Utils.sol
@@ -5264,7 +5801,7 @@ abstract contract ERC20PermitUpgradeable is Initializable, ERC20Upgradeable, IER
     }
 }
 
-// certora/BeHYPEProtocol.sol
+// src/BeHYPEProtocol.sol
 
 /*
  * BeHYPEProtocol — single-contract merge of StakingCore + WithdrawManager + BeHYPE
@@ -5284,19 +5821,16 @@ abstract contract ERC20PermitUpgradeable is Initializable, ERC20Upgradeable, IER
  * The external mint/burn/sendFromWithdrawManager entry points keep their msg.sender guards.
  *
  * Kept external (inferred dependencies): RoleRegistry, HyperCore L1Read precompile reader, CoreWriter.
+ * The Certora Autoprover upload is the self-contained certora/BeHYPEProtocol.flat.sol.
  * See certora/README.md for the full function mapping and the residual (address-collapse) differences.
  */
 
 /* ========== EXTERNAL DEPENDENCIES (kept out of the merge) ========== */
 
-/// @notice Subset of src/interfaces/IRoleRegistry.sol used by the protocol contracts.
-interface IRoleRegistry {
-    function PROTOCOL_ADMIN() external view returns (bytes32);
-    function PROTOCOL_GUARDIAN() external view returns (bytes32);
-    function hasRole(bytes32 role, address account) external view returns (bool);
-    function onlyProtocolUpgrader(address account) external view;
-    function protocolTreasury() external view returns (address);
-}
+// RoleRegistry is used through its real interface (implemented by src/RoleRegistry.sol).
+// L1Read and CoreWriter are declared as interfaces here rather than imported: src/lib/L1Read.sol
+// and src/lib/CoreWriter.sol are concrete contracts (CoreWriter is a test mock), and importing them
+// would add extra concrete contracts to the single-contract flat file.
 
 /// @notice ABI-identical subset of src/lib/L1Read.sol (HyperCore precompile reader at 0xb746...).
 interface IL1Read {
@@ -5320,11 +5854,6 @@ interface IL1Read {
 /// @notice HyperCore CoreWriter system contract (0x3333...).
 interface ICoreWriter {
     function sendRawAction(bytes calldata data) external;
-}
-
-/// @notice Only used when StakingCore's withdrawManager pointer is re-pointed away from this contract.
-interface IExternalWithdrawManager {
-    function hypeRequestedForWithdraw() external view returns (uint256);
 }
 
 /* ========== INLINED LIBRARY ========== */
@@ -5991,7 +6520,7 @@ contract BeHYPEProtocol is Initializable, UUPSUpgradeable, ERC20PermitUpgradeabl
     /// @dev StakingCore -> IWithdrawManager(withdrawManager).hypeRequestedForWithdraw()
     function _withdrawManagerHypeRequested() internal view returns (uint256) {
         if (withdrawManager == address(this)) return hypeRequestedForWithdraw;
-        return IExternalWithdrawManager(withdrawManager).hypeRequestedForWithdraw();
+        return IWithdrawManager(withdrawManager).hypeRequestedForWithdraw();
     }
 
     function _sendHype(uint256 amount, address to) internal {

@@ -19,6 +19,7 @@ pragma solidity ^0.8.26;
  * The external mint/burn/sendFromWithdrawManager entry points keep their msg.sender guards.
  *
  * Kept external (inferred dependencies): RoleRegistry, HyperCore L1Read precompile reader, CoreWriter.
+ * The Certora Autoprover upload is the self-contained certora/BeHYPEProtocol.flat.sol.
  * See certora/README.md for the full function mapping and the residual (address-collapse) differences.
  */
 
@@ -28,17 +29,15 @@ import {ERC20PermitUpgradeable} from "@openzeppelin/contracts-upgradeable/token/
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {IRoleRegistry} from "./interfaces/IRoleRegistry.sol";
+import {IWithdrawManager} from "./interfaces/IWithdrawManager.sol";
 
 /* ========== EXTERNAL DEPENDENCIES (kept out of the merge) ========== */
 
-/// @notice Subset of src/interfaces/IRoleRegistry.sol used by the protocol contracts.
-interface IRoleRegistry {
-    function PROTOCOL_ADMIN() external view returns (bytes32);
-    function PROTOCOL_GUARDIAN() external view returns (bytes32);
-    function hasRole(bytes32 role, address account) external view returns (bool);
-    function onlyProtocolUpgrader(address account) external view;
-    function protocolTreasury() external view returns (address);
-}
+// RoleRegistry is used through its real interface (implemented by src/RoleRegistry.sol).
+// L1Read and CoreWriter are declared as interfaces here rather than imported: src/lib/L1Read.sol
+// and src/lib/CoreWriter.sol are concrete contracts (CoreWriter is a test mock), and importing them
+// would add extra concrete contracts to the single-contract flat file.
 
 /// @notice ABI-identical subset of src/lib/L1Read.sol (HyperCore precompile reader at 0xb746...).
 interface IL1Read {
@@ -62,11 +61,6 @@ interface IL1Read {
 /// @notice HyperCore CoreWriter system contract (0x3333...).
 interface ICoreWriter {
     function sendRawAction(bytes calldata data) external;
-}
-
-/// @notice Only used when StakingCore's withdrawManager pointer is re-pointed away from this contract.
-interface IExternalWithdrawManager {
-    function hypeRequestedForWithdraw() external view returns (uint256);
 }
 
 /* ========== INLINED LIBRARY ========== */
@@ -733,7 +727,7 @@ contract BeHYPEProtocol is Initializable, UUPSUpgradeable, ERC20PermitUpgradeabl
     /// @dev StakingCore -> IWithdrawManager(withdrawManager).hypeRequestedForWithdraw()
     function _withdrawManagerHypeRequested() internal view returns (uint256) {
         if (withdrawManager == address(this)) return hypeRequestedForWithdraw;
-        return IExternalWithdrawManager(withdrawManager).hypeRequestedForWithdraw();
+        return IWithdrawManager(withdrawManager).hypeRequestedForWithdraw();
     }
 
     function _sendHype(uint256 amount, address to) internal {

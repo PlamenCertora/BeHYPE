@@ -13,13 +13,15 @@ implementation. The originals remain in git history at commit `8041e71`.
 | File | Purpose |
 |---|---|
 | `BeHYPEProtocol.flat.sol` | **Upload this to the Autoprover.** Self-contained (no imports); exactly one concrete contract, `BeHYPEProtocol`. Compiles with solc 0.8.26 – 0.8.36, with and without via-IR. |
-| `BeHYPEProtocol.sol` | Readable source of the merge (imports OZ from `lib/`). The flat file is generated from it. |
+| `../src/BeHYPEProtocol.sol` | Source of the merged contract (imports OZ from `lib/` and the protocol interfaces from `src/interfaces/`). The flat file is generated from it. |
 | `../test/*.t.sol` | The project's unit tests, ported to run against the merged contract. |
 
-Regenerate the flat file after editing the source:
+The flat file is kept outside `src/` on purpose. It is a generated upload file, and inside `src/`
+Foundry would compile a second `BeHYPEProtocol` plus a duplicate copy of OZ. Regenerate it after
+editing the source:
 
 ```sh
-forge flatten certora/BeHYPEProtocol.sol -o certora/BeHYPEProtocol.flat.sol
+forge flatten src/BeHYPEProtocol.sol -o certora/BeHYPEProtocol.flat.sol
 ```
 
 ## What is merged and what stays external
@@ -30,7 +32,7 @@ forge flatten certora/BeHYPEProtocol.sol -o certora/BeHYPEProtocol.flat.sol
 | `WithdrawManager` | merged | Owns the liabilities (queue, `hypeRequestedForWithdraw`), escrows beHYPE |
 | `BeHYPE` (ERC20Permit) | merged | `totalSupply` is the ratio denominator; escrow balance |
 | `BucketLimiter` (was `src/lib/BucketLimiter.sol`) | inlined | The original `canConsume`/`consumable` are `external` (a separately linked library). They are now `internal`; the code is otherwise verbatim. |
-| `RoleRegistry` | **external** (`IRoleRegistry` subset) | Pure access control on Solady `EnumerableRoles`. Verify it as its own Autoprover job. |
+| `RoleRegistry` | **external** (`src/interfaces/IRoleRegistry.sol`) | Pure access control on Solady `EnumerableRoles`. Verify it as its own Autoprover job. |
 | `L1Read` (HyperCore precompiles 0x801/0x805) | **external** (`IL1Read`) | HyperCore state changes between EVM txs, so havoc is the sound model |
 | `CoreWriter` (0x3333…) | **external** (`ICoreWriter`) | System contract; fire-and-forget |
 | `BeHYPETimelock`, `UUPSProxy`, `ICreate3Deployer` | omitted | Deployment-only / unmodified OZ |

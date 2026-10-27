@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import {Test} from "forge-std/Test.sol";
 import {ERC1967Utils} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Utils.sol";
 import {UUPSProxy} from "../src/lib/UUPSProxy.sol";
-import {BeHYPEProtocol} from "../certora/BeHYPEProtocol.sol";
+import {BeHYPEProtocol} from "../src/BeHYPEProtocol.sol";
 import {RoleRegistry} from "../src/RoleRegistry.sol";
 import {CoreWriter} from "../src/lib/CoreWriter.sol";
 import {IStakingCore} from "../src/interfaces/IStakingCore.sol";
