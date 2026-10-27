@@ -9,7 +9,7 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IRoleRegistry} from "./interfaces/IRoleRegistry.sol";
-import {IBeHYPEToken} from "./interfaces/IBeHype.sol";
+import {IBeHYPEToken} from "./interfaces/IBeHYPE.sol";
 import {IStakingCore} from "./interfaces/IStakingCore.sol";
 import {IWithdrawManager} from "./interfaces/IWithdrawManager.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";

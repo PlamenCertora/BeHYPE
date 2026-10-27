@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import {IRoleRegistry} from "./IRoleRegistry.sol";
-import {IBeHYPEToken} from "./IBeHype.sol";
+import {IBeHYPEToken} from "./IBeHYPE.sol";
 
 /**
  * @title IStakingCore

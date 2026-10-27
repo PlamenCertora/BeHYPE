@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "./Base.t.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {ERC20PermitUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
-import {IBeHYPEToken} from "../src/interfaces/IBeHype.sol";
+import {IBeHYPEToken} from "../src/interfaces/IBeHYPE.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 contract BeHYPETest is BaseTest {
